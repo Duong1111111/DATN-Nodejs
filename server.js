@@ -12,6 +12,7 @@ app.use(express.json());
 const allowedOrigins = [
   "http://localhost:3000",
   "http://26.112.109.171:3000",
+  "https://travelsuggest-app-36bf8.web.app",
 ];
 
 const isDev = process.env.NODE_ENV !== "production";
@@ -65,7 +66,7 @@ app.post('/api/get-recommendations', async (req, res) => {
       };
 
       const updateResponse = await axios.put(
-        `http://26.118.131.110:8080/api/accounts/user/${accountId}`,
+        `https://datn-0v3f.onrender.com/api/accounts/user/${accountId}`,
         filteredUserUpdate,
         { headers: { "Content-Type": "application/json" } }
       );
