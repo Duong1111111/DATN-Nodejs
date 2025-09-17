@@ -159,6 +159,63 @@ app.post('/api/get-recommendations', async (req, res) => {
   }
 });
 
+app.post('/api/analyze-performance', async (req, res) => {
+  try {
+    const { companyId, message, history, token } = req.body; // Lấy token từ client
+
+    if (!companyId || !message || !token) {
+      return res.status(400).json({ error: "Thiếu companyId, message hoặc token" });
+    }
+
+    // 1. Gọi API Spring Boot để lấy dữ liệu hiệu suất, kèm Bearer token
+    console.log(`Đang lấy dữ liệu cho công ty ID: ${companyId}...`);
+    const dataResponse = await axios.post(
+      `http://localhost:8080/api/data-aggregation/snapshot`,
+      { companyId },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}` // Thêm token ở đây
+        }
+      }
+    );
+    const performanceData = dataResponse.data; // Dữ liệu JSON từ Spring Boot
+    console.log("Lấy dữ liệu thành công!");
+
+    // 2. Xây dựng Prompt hoàn chỉnh cho Gemini
+    const fullPrompt = `Bạn là một Nhà phân tích Dữ liệu và Chiến lược gia Kinh doanh chuyên nghiệp trong ngành du lịch và khách sạn.
+      Mục tiêu của bạn là phân tích dữ liệu hiệu suất và cung cấp những hiểu biết rõ ràng, ngắn gọn và có thể hành động để giúp các chủ doanh nghiệp cải thiện hiệu suất của họ trên nền tảng TravelSuggest.
+      Giọng điệu của bạn chuyên nghiệp, khách quan và hữu ích. Sử dụng tiếng Việt.
+      Chỉ dựa vào dữ liệu được cung cấp trong ngữ cảnh để phân tích. Không tự bịa đặt dữ liệu. Khi được yêu cầu đề xuất, hãy cung cấp một danh sách được đánh số các hành động cụ thể. Định dạng câu trả lời bằng markdown để dễ đọc.
+
+      DỮ LIỆU NGỮ CẢNH:
+      \`\`\`json
+      ${JSON.stringify(performanceData, null, 2)}
+      \`\`\`
+
+      DỰA VÀO DỮ LIỆU TRÊN, HÃY TRẢ LỜI CÂU HỎI SAU:
+      "${message}"
+      `;
+
+    // 3. Gọi Gemini API và streaming kết quả
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" }); 
+    const result = await model.generateContent(fullPrompt);
+    const geminiText = (await result.response.text()).trim();
+
+    // 4. Pipe stream từ Gemini thẳng về cho client
+    res.setHeader('Content-Type', 'text/plain; charset=utf-8');
+    for await (const chunk of result.stream) {
+      res.write(chunk.text());
+    }
+
+    res.end();
+
+  } catch (error) {
+    console.error("Lỗi tại Server AI (Node.js):", error);
+    res.status(500).json({ error: "Đã có lỗi xảy ra phía máy chủ AI." });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`✅ Server Node.js đang chạy tại http://localhost:${PORT}`);
 });
