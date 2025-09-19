@@ -8,39 +8,39 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const app = express();
 app.use(express.json());
 
-// // ✅ Cấu hình CORS
-// const allowedOrigins = [
-//   "http://localhost:3000",
-//   "http://26.112.109.171:3000",
-//   "https://travelsuggest-app-36bf8.web.app",
-// ];
-app.use(cors());
+// ✅ Cấu hình CORS
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://26.112.109.171:3000",
+  "https://travelsuggest-app-36bf8.web.app",
+];
+// app.use(cors());
 
-// const isDev = process.env.NODE_ENV !== "production";
+const isDev = process.env.NODE_ENV !== "production";
 
-// if (isDev) {
-//   // Dev mode: cho phép tất cả
-//   app.use(cors());
-// } else {
-//   // Prod mode: chỉ cho phép origin trong danh sách
-//   app.use(
-//     cors({
-//       origin: function (origin, callback) {
-//         if (!origin || allowedOrigins.includes(origin)) {
-//           callback(null, true);
-//         } else {
-//           callback(new Error("Not allowed by CORS"));
-//         }
-//       },
-//       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-//       allowedHeaders: ["Content-Type", "Authorization"],
-//       credentials: true,
-//     })
-//   );
-// }
+if (isDev) {
+  // Dev mode: cho phép tất cả
+  app.use(cors());
+} else {
+  // Prod mode: chỉ cho phép origin trong danh sách
+  app.use(
+    cors({
+      origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      },
+      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+      credentials: true,
+    })
+  );
+}
 
-// // ✅ Xử lý preflight cho tất cả route
-// app.options("*", cors());
+// ✅ Xử lý preflight cho tất cả route
+app.options("*", cors());
 
 const PORT = process.env.PORT || 3001;
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -193,7 +193,7 @@ app.post('/api/analyze-performance', async (req, res) => {
     // 1. Gọi API Spring Boot để lấy dữ liệu hiệu suất, kèm Bearer token
     console.log(`Đang lấy dữ liệu cho công ty ID: ${companyId}...`);
     const dataResponse = await axios.post(
-      `http://localhost:8080/api/data-aggregation/snapshot`,
+      `https://datn-0v3f.onrender.com/api/data-aggregation/snapshot`,
       { companyId },
       {
         headers: {
@@ -301,7 +301,7 @@ app.get('/api/proactive-insights/unread', async (req, res) => {
   }
 
   try {
-    const response = await axios.get(`http://localhost:8080/api/proactive-insights/unread`, {
+    const response = await axios.get(`https://datn-0v3f.onrender.com/api/proactive-insights/unread`, {
       headers: { 'Authorization': authHeader }
     });
     res.json(response.data);
@@ -322,7 +322,7 @@ app.put('/api/proactive-insights/:insightId/read', async (req, res) => {
   }
 
   try {
-    const response = await axios.put(`http://localhost:8080/api/proactive-insights/${insightId}/read`, {}, {
+    const response = await axios.put(`https://datn-0v3f.onrender.com/api/proactive-insights/${insightId}/read`, {}, {
       headers: { 'Authorization': authHeader }
     });
     res.json(response.data);
